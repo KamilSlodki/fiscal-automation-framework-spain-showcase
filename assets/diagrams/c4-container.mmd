@@ -1,0 +1,127 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2962FF', 'secondaryColor': '#00C853', 'tertiaryColor': '#FF6D00'}}}%%
+
+flowchart TB
+    subgraph cli["CLI Layer"]
+        TYPER["Typer 0.9 + Rich<br/>comandos por capa"]
+    end
+
+    subgraph c1["Capa 1 - Intake"]
+        PDF_PARSE["pdfplumber<br/>extraccion PDF"]
+        OCR["pytesseract + Pillow<br/>fallback imagenes"]
+        XLS["openpyxl + pandas<br/>extractos bancarios"]
+        CHECKS["5 checks alto nivel<br/>doble lectura · fecha ·<br/>rango · trimestre · recalculo"]
+    end
+
+    subgraph c2["Capa 2 - Classification"]
+        MAP_YAML["Catalogo YAML<br/>proveedor -> categoria AEAT<br/>determinista · NO LLM"]
+        RULES["Reglas deducibilidad<br/>art 30-32 LIRPF<br/>art 96 LIVA"]
+    end
+
+    subgraph c3["Capa 3 - Math Engine"]
+        DEC["Decimal stdlib<br/>tolerance 0.02 EUR<br/>IN-006: NO float"]
+        IVA_CALC["IVA: base x tipo<br/>0% · 4% · 10% · 21%"]
+        IRPF_CALC["IRPF 130: pagos fraccionados<br/>con reglas exencion LIRPF"]
+        AMORT["Amortizaciones lineales<br/>coeficientes por categoria"]
+    end
+
+    subgraph c4_layer["Capa 4 - Validation (4 sub-capas)"]
+        V_FORMAL["Formal<br/>RD 1619/2012 campos obligatorios"]
+        V_REAL["Realidad<br/>CIF formato + checksum"]
+        V_CENSAL["Censal<br/>alta AEAT cuando aplica"]
+        V_DUP["Duplicados<br/>SHA-256 vs manifest historico"]
+    end
+
+    subgraph c5["Capa 5 - Reconciliation"]
+        RECON["Ledger contable vs extracto bancario<br/>tolerance 0.02 EUR<br/>huerfanos bidireccionales"]
+    end
+
+    subgraph c6["Capa 6 - AEAT Models"]
+        M303["Modelo 303<br/>IVA trimestral"]
+        M130["Modelo 130<br/>IRPF pagos fraccionados"]
+        M349["Modelo 349<br/>intracomunitarias"]
+        M390["Modelo 390<br/>resumen anual"]
+    end
+
+    subgraph c7["Capa 7 - Release & Audit"]
+        MANIFEST["manifest.json<br/>SHA-256 inputs + outputs"]
+        REP_VAL["validity_report.json"]
+        REP_OCR["ocr_audit.json"]
+        REP_CLS["classification_audit.json"]
+        REP_REC["reconciliation_report.json"]
+        REP_REL["release_report.md<br/>resumen ejecutivo"]
+    end
+
+    subgraph cross["Cross-cutting"]
+        PYDANTIC["Pydantic 2.0<br/>4 JSON Schemas"]
+        FSM["FSM 6 estados<br/>RAW -> PARSED -> NORMALIZED -><br/>VALIDATED -> RECONCILED -> APPROVED · BLOCKED"]
+        INV["9 invariantes IN-001..IN-009<br/>validables via grep"]
+        TESTS["pytest<br/>suite completa paths criticos"]
+    end
+
+    TYPER --> PDF_PARSE
+    TYPER --> OCR
+    TYPER --> XLS
+    PDF_PARSE --> CHECKS
+    OCR --> CHECKS
+    CHECKS --> MAP_YAML
+    XLS --> RECON
+    MAP_YAML --> RULES
+    RULES --> DEC
+    DEC --> IVA_CALC
+    DEC --> IRPF_CALC
+    DEC --> AMORT
+    IVA_CALC --> V_FORMAL
+    IRPF_CALC --> V_FORMAL
+    AMORT --> V_FORMAL
+    V_FORMAL --> V_REAL
+    V_REAL --> V_CENSAL
+    V_CENSAL --> V_DUP
+    V_DUP --> RECON
+    RECON --> M303
+    RECON --> M130
+    RECON --> M349
+    RECON --> M390
+    M303 --> MANIFEST
+    M130 --> MANIFEST
+    M349 --> MANIFEST
+    M390 --> MANIFEST
+    MANIFEST --> REP_VAL
+    MANIFEST --> REP_OCR
+    MANIFEST --> REP_CLS
+    MANIFEST --> REP_REC
+    MANIFEST --> REP_REL
+
+    PYDANTIC -.-> CHECKS
+    PYDANTIC -.-> V_FORMAL
+    FSM -.-> CHECKS
+    FSM -.-> V_FORMAL
+    FSM -.-> RECON
+    INV -.-> DEC
+    INV -.-> MANIFEST
+    TESTS -.-> DEC
+    TESTS -.-> V_FORMAL
+
+    classDef intake fill:#FF6D00,stroke:#FF9100,color:white
+    classDef classify fill:#FFA000,stroke:#FF8F00,color:white
+    classDef math fill:#2962FF,stroke:#1E88E5,color:white
+    classDef val fill:#7C4DFF,stroke:#651FFF,color:white
+    classDef recon fill:#00897B,stroke:#00695C,color:white
+    classDef model fill:#388E3C,stroke:#1B5E20,color:white
+    classDef audit fill:#C62828,stroke:#B71C1C,color:white
+    classDef cross_c fill:#616161,stroke:#424242,color:white
+
+    class TYPER,PDF_PARSE,OCR,XLS,CHECKS intake
+    class MAP_YAML,RULES classify
+    class DEC,IVA_CALC,IRPF_CALC,AMORT math
+    class V_FORMAL,V_REAL,V_CENSAL,V_DUP val
+    class RECON recon
+    class M303,M130,M349,M390 model
+    class MANIFEST,REP_VAL,REP_OCR,REP_CLS,REP_REC,REP_REL audit
+    class PYDANTIC,FSM,INV,TESTS cross_c
+
+%% Notes
+%% 7 capas con cross-cutting (Pydantic schemas + FSM 6 estados +
+%% 9 invariantes IN-001..IN-009 validables grep + pytest critico).
+%% Decimal exclusivo en math layer (IN-006) · NO float prohibido por linter.
+%% Hash SHA-256 en cada release manifest (IN-007 + IN-009).
+%% Validacion 4 capas obligatoria pre-release (IN-001..IN-005 + IN-008).

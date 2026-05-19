@@ -1,0 +1,57 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Build
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*
+secrets*
+
+# Personal fiscal data (NEVER commit)
+DOCUMENTOS/
+data/raw/
+data/processed/
+data/private/
+*.pdf
+*.xlsx
+*.xls
+*.csv
+!data/samples/synthetic_*.csv
+ledger/
+extractos/
+facturas/
+manifests/private/
+
+# Internal docs / notes (kept out of public repo)
+**/STATUS.md
+**/PROGRESS.md
+**/BACKLOG.md
+**/CHANGELOG.md
+*_internal_*.md
+*_private_*.md
+
+# Tests with real data
+tests/integration/*real*
+tests/integration/*Q[1-4]_*
+
+# Coverage / cache
+.pytest_cache/
+htmlcov/
+.coverage

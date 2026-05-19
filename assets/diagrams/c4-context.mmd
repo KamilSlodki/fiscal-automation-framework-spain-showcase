@@ -1,0 +1,51 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2962FF', 'secondaryColor': '#00C853', 'tertiaryColor': '#FF6D00'}}}%%
+
+flowchart TB
+    USER["Autonomo<br/>regimen estimacion directa simplificada"]
+
+    subgraph framework["Fiscal Automation Framework (self-hosted CLI)"]
+        CORE["Pipeline 7 capas<br/>Intake -> Classification -> Math -><br/>Validation -> Reconciliation -><br/>AEAT Models -> Release"]
+    end
+
+    subgraph inputs["Inputs (privados · gitignored)"]
+        DOCS["Documentos PDF<br/>facturas emitidas + recibidas"]
+        IMG["Imagenes y tickets<br/>via OCR"]
+        BANK["Extractos bancarios<br/>Excel"]
+        CFG["Catalogo proveedores<br/>YAML versionado"]
+    end
+
+    subgraph outputs["Outputs (privados · gitignored)"]
+        AEAT_MODELS["Modelos AEAT<br/>303 · 130 · 349 · 390"]
+        AUDIT["6 artefactos auditoria<br/>manifest + 5 reports<br/>hash SHA-256"]
+        LEDGER["Ledger contable<br/>CSV/SQLite"]
+    end
+
+    subgraph external["Sistemas externos (manual)"]
+        AEAT_GOV["AEAT<br/>presentacion presencial<br/>via portal oficial"]
+    end
+
+    USER -->|opera CLI| CORE
+    DOCS --> CORE
+    IMG --> CORE
+    BANK --> CORE
+    CFG --> CORE
+    CORE --> AEAT_MODELS
+    CORE --> AUDIT
+    CORE --> LEDGER
+    USER -->|revision humana<br/>presentacion manual| AEAT_GOV
+    AEAT_MODELS -.->|copia revisada| AEAT_GOV
+
+    classDef user fill:#FF6D00,stroke:#FF9100,color:white
+    classDef core fill:#2962FF,stroke:#1E88E5,color:white
+    classDef data fill:#388E3C,stroke:#1B5E20,color:white
+    classDef ext fill:#757575,stroke:#9E9E9E,color:white
+
+    class USER user
+    class CORE core
+    class DOCS,IMG,BANK,CFG,AEAT_MODELS,AUDIT,LEDGER data
+    class AEAT_GOV ext
+
+%% Notes
+%% Sistema de uso propio del autor (NO SaaS multiusuario).
+%% Inputs y outputs viven en disco local con gitignore estricto.
+%% Presentacion final a AEAT siempre manual con revision humana.
